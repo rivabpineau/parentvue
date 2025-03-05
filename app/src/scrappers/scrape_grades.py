@@ -84,7 +84,7 @@ def __scrape_grades(driver):
     print("[INFO] Scraped Grades Successfully.")
     return data
 
-def collect_grades(driver):
+def __collect_grades(driver):
     grade_html_source =  __click_grade_book(driver)
     print(f"Grade HTML: {grade_html_source}")
 
@@ -92,3 +92,8 @@ def collect_grades(driver):
 
     print( json.dumps(grade_json, indent=4))
     return grade_json
+
+def collect_and_save_grades(driver):
+    __click_grade_book(driver)
+    __scrape_grades(driver)
+    __collect_grades(driver)
