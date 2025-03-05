@@ -1,10 +1,13 @@
 import json
-
+import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from datetime import datetime
+
+__date_scraped = datetime.now().strftime("%Y-%m-%d %H%M%S")  # Format: YYYY-MM-DD HH:MM:SS
 
 
 def __click_grade_book(driver):
@@ -33,56 +36,59 @@ def __click_grade_book(driver):
         print(f"Error clicking on 'Grade Book': {e}")
 
 
-def __scrape_grades(html_content):
-    """
-    Parses the given HTML content and extracts class grades, teachers, and marking period.
+def __scrape_grades(driver):
 
-    Args:
-        html_content (str): The HTML content of the gradebook.
+    # Extract table rows
+    class_rows = driver.find_elements(By.CSS_SELECTOR, ".gb-class-header.gb-class-row.flexbox.horizontal")
 
-    Returns:
-        str: JSON string containing the extracted grade data.
-    """
-    soup = BeautifulSoup(html_content, "html.parser")
+    data = []
 
-    # Extract the grading period
-    grading_period_elem = soup.find("div", class_="current breadcrumb-term")
-    grading_period = grading_period_elem.text.strip() if grading_period_elem else "Unknown"
+    for row in class_rows:
 
-    # Find all classes
-    classes_data = []
-    for class_row in soup.find_all("div", class_="row gb-class-header gb-class-row flexbox horizontal"):
-        class_name_elem = class_row.find("button", class_="btn btn-link course-title")
-        teacher_elem = class_row.find("div", class_="teacher.hide-for-screen")
+        try:
+            # Extract class name
+            raw_class_name = row.find_element(By.XPATH, ".//button[contains(@class, 'course-title')]").text.strip()
+            # Remove the leading number and colon (e.g., "1: Geometry" → "Geometry")
+            class_name = re.sub(r"^\d+:\s*", "", raw_class_name)
 
-        if class_name_elem and teacher_elem:
-            class_name = class_name_elem.text.split(": ", 1)[-1].strip()
-            teacher_name = teacher_elem.text.strip()
+            # Extract teacher name
+            teacher_name = row.find_element(By.XPATH, ".//span[contains(@class, 'teacher')]//a").text.strip()
 
-            # Find the associated grade row using data-guid
-            data_guid = class_row.get("data-guid")
-            grade_row = soup.find("div", class_="row gb-class-row", attrs={"data-guid": data_guid})
+            # Extract period
+            period = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//button[contains(@class, 'course-markperiod')]").text.strip()
 
-            if grade_row:
-                grade_elem = grade_row.find("span", class_="mark")
-                score_elem = grade_row.find("span", class_="score")
-                grade = grade_elem.text.strip() if grade_elem else "N/A"
-                score = score_elem.text.strip() if score_elem else "N/A"
+            # Extract grade (if available)
+            try:
+                grade = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'mark')]").text.strip()
+            except:
+                grade = "N/A"
 
-                # Store the extracted data
-                classes_data.append({
-                    "class": class_name,
-                    "teacher": teacher_name,
-                    "grading_period": grading_period,
-                    "grade": grade,
-                    "score": score
-                })
+            # Extract score (if available)
+            try:
+                score = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'score')]").text.strip()
+            except:
+                score = "N/A"
 
-    # Convert to JSON and return
-    return classes_data
+            # Append data
+            data.append({
+                "Class": class_name,
+                "Teacher": teacher_name,
+                "Period": period,
+                "Grade": grade,
+                "Score": score,
+            })
+
+        except Exception as e:
+            print(f"Error processing a row: {e}")
+
+    print("[INFO] Scraped Grades Successfully.")
+    return data
 
 def collect_grades(driver):
     grade_html_source =  __click_grade_book(driver)
-    grade_json = __scrape_grades(grade_html_source)
+    print(f"Grade HTML: {grade_html_source}")
+
+    grade_json = __scrape_grades(driver)
+
     print( json.dumps(grade_json, indent=4))
     return grade_json
