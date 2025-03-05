@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 from scrappers.pvue_login import login_to_website
-from scrappers.scrape_grades import collect_and_save_grades
+from scrappers.scrape_grades import process_grades
 
 # Load environment variables
 load_dotenv(verbose=True)
@@ -21,7 +21,7 @@ def main():
     try:
 
         s_driver = login_to_website(url,user,pwd)
-        collect_and_save_grades(s_driver)
+        process_grades(s_driver)
 
     except Exception as e:
         print(e)

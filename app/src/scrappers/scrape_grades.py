@@ -1,13 +1,14 @@
 import json
 import re
-from bs4 import BeautifulSoup
+from datetime import datetime
+from utils import file_utils
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from datetime import datetime
 
-__date_scraped = datetime.now().strftime("%Y-%m-%d %H%M%S")  # Format: YYYY-MM-DD HH:MM:SS
+__date_scraped = datetime.now().strftime("%Y-%m-%d_%H%M%S")  # Format: YYYY-MM-DD HH:MM:SS
 
 
 def __click_grade_book(driver):
@@ -29,12 +30,8 @@ def __click_grade_book(driver):
             EC.presence_of_element_located((By.ID, "gb-classes"))
         )
 
-        # Return the updated page source for scraping
-        return driver.page_source
-
     except Exception as e:
         print(f"Error clicking on 'Grade Book': {e}")
-
 
 def __scrape_grades(driver):
 
@@ -76,6 +73,7 @@ def __scrape_grades(driver):
                 "Period": period,
                 "Grade": grade,
                 "Score": score,
+                "date_scraped": __date_scraped,
             })
 
         except Exception as e:
@@ -84,16 +82,15 @@ def __scrape_grades(driver):
     print("[INFO] Scraped Grades Successfully.")
     return data
 
-def __collect_grades(driver):
-    grade_html_source =  __click_grade_book(driver)
-    print(f"Grade HTML: {grade_html_source}")
+def __save_grades(grade_json):
+    file_utils.save_json_to_disk(grade_json, __date_scraped)
+
+def process_grades(driver):
+
+    __click_grade_book(driver)
 
     grade_json = __scrape_grades(driver)
-
     print( json.dumps(grade_json, indent=4))
-    return grade_json
 
-def collect_and_save_grades(driver):
-    __click_grade_book(driver)
-    __scrape_grades(driver)
-    __collect_grades(driver)
+    __save_grades(grade_json)
+
