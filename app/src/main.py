@@ -19,9 +19,10 @@ def main():
     s_driver = None
 
     try:
+        data_output_format = os.environ.get("DATA_OUTPUT_FORMAT")
 
         s_driver = login_to_website(url,user,pwd)
-        process_grades(s_driver)
+        process_grades(s_driver, data_output_format)
 
     except Exception as e:
         print(e)

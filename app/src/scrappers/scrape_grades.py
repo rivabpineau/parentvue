@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import datetime
-from utils import file_utils
+from utils import file_utils, csv_utils
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -33,8 +33,8 @@ def __click_grade_book(driver):
     except Exception as e:
         print(f"Error clicking on 'Grade Book': {e}")
 
-def __scrape_grades(driver):
 
+def __scrape_grades(driver):
     # Extract table rows
     class_rows = driver.find_elements(By.CSS_SELECTOR, ".gb-class-header.gb-class-row.flexbox.horizontal")
 
@@ -52,17 +52,20 @@ def __scrape_grades(driver):
             teacher_name = row.find_element(By.XPATH, ".//span[contains(@class, 'teacher')]//a").text.strip()
 
             # Extract period
-            period = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//button[contains(@class, 'course-markperiod')]").text.strip()
+            period = row.find_element(By.XPATH,
+                                      "./following-sibling::div[contains(@class, 'gb-class-row')]//button[contains(@class, 'course-markperiod')]").text.strip()
 
             # Extract grade (if available)
             try:
-                grade = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'mark')]").text.strip()
+                grade = row.find_element(By.XPATH,
+                                         "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'mark')]").text.strip()
             except:
                 grade = "N/A"
 
             # Extract score (if available)
             try:
-                score = row.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'score')]").text.strip()
+                score = row.find_element(By.XPATH,
+                                         "./following-sibling::div[contains(@class, 'gb-class-row')]//span[contains(@class, 'score')]").text.strip()
             except:
                 score = "N/A"
 
@@ -82,15 +85,24 @@ def __scrape_grades(driver):
     print("[INFO] Scraped Grades Successfully.")
     return data
 
-def __save_grades(grade_json):
-    file_utils.save_json_to_disk(grade_json, __date_scraped)
 
-def process_grades(driver):
+def __save_grades(grade_json, data_output_format):
+    file_utils.save_data(grade_json, __date_scraped, data_output_format)
 
-    __click_grade_book(driver)
 
-    grade_json = __scrape_grades(driver)
-    print( json.dumps(grade_json, indent=4))
+def __convert_to_csv(grade_json):
+    return csv_utils.json_to_csv_pandas(grade_json)
 
-    __save_grades(grade_json)
 
+def process_grades(driver, data_output_format):
+
+    try:
+
+        __click_grade_book(driver)
+
+        grade_json = __scrape_grades(driver)
+
+        __save_grades(grade_json, data_output_format)
+
+    except Exception as e:
+        print(f"[ERROR] Failed to save JSON: {e}")
