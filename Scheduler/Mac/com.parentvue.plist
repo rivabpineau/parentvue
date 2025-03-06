@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.parentvue.plist</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/bp_home/PycharmProjects/parentvue/.venv/bin/python3</string>  <!-- Python interpreter -->
+        <string>/Users/bp_home/PycharmProjects/parentvue/app/src/main.py</string>  <!-- Path to your script -->
+    </array>
+
+
+    <key>StartInterval</key>
+    <integer>14400</integer>  <!-- 4 hours (14400 seconds) -->
+
+    <key>WorkingDirectory</key>
+    <string>/Users/bp_home/PycharmProjects/parentvue/app/src/</string>  <!-- Directory where your script runs -->
+
+    <key>StandardOutPath</key>
+    <string>/Users/bp_home/PycharmProjects/parentvue/plist_logs/parentvue.log</string>  <!-- Log output -->
+
+    <key>StandardErrorPath</key>
+    <string>/Users/bp_home/PycharmProjects/parentvue/plist_logs/parentvue_error.log</string>  <!-- Log errors -->
+
+    <key>RunAtLoad</key>
+    <true/>  <!-- Runs on user login -->
+
+</dict>
+</plist>
