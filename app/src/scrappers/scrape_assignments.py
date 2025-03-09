@@ -12,9 +12,73 @@ def process_assignments(driver, data_output_format):
     click_grade_book(driver)
     __iterate_over_each_class(driver, data_output_format)
 
+#TODO scraping assignments now. but still needs some refinement. its pulling all of the hidden rows and total row, and not considering the header row as a header row.
+def __scrape_assignment(driver, data_output_format, class_meta_data):
+    class_name = class_meta_data['Class']
+    teacher_name = class_meta_data['Teacher']
+    marking_period = class_meta_data['MarkingPeriod']
 
-def __scrape_assignment(class_name, driver, data_output_format):
-    print("Loaded Page {}. Start Scrapping!!!".format(class_name))
+    print(f"📌 Loaded Page {class_name}. Start Scraping!")
+
+    assignments_data = []
+
+    try:
+        # ✅ Ensure table is fully loaded before proceeding
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//div[contains(@class,'dx-datagrid-rowsview')]"))
+        )
+
+        # ✅ Scroll table into view to handle lazy loading
+        assignments_grid = driver.find_element(By.XPATH, "//div[contains(@class,'dx-datagrid-rowsview')]")
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", assignments_grid)
+        time.sleep(2)  # Ensure lazy-loaded content is visible
+
+        # ✅ Locate assignment rows that have `role="row"`
+        assignment_rows = driver.find_elements(By.XPATH, "//tbody/tr[@role='row']")
+
+        print(f"✅ Found {len(assignment_rows)} assignment(s) for {class_name}.")
+
+        if not assignment_rows:
+            print(f"⚠️ No assignments found for {class_name}.")
+            return []
+
+        # ✅ Extract assignment details from each row
+        for row in assignment_rows:
+            try:
+                # **Locate all <td> elements**
+                td_elements = row.find_elements(By.TAG_NAME, "td")
+
+                # ✅ Ensure there are enough columns before accessing specific indices
+                if len(td_elements) < 4:  # Adjust based on the minimum columns needed
+                    print(f"⚠️ Skipping row due to insufficient columns: {len(td_elements)}")
+                    continue  # Skip to the next row
+
+                assignment_category = td_elements[0].text.strip()  # Formative, Homework, etc.
+                weight = td_elements[1].text.strip()  # Weight percentage
+                score = td_elements[2].text.strip()  # Actual score
+                possible_score = td_elements[3].text.strip()  # Maximum possible score
+
+                # ✅ Store extracted data
+                assignment_info = {
+                    "Class": class_name,
+                    "Teacher": teacher_name,
+                    "Marking Period": marking_period,
+                    "Category": assignment_category,
+                    "Weight": weight,
+                    "Score": score,
+                    "Possible Score": possible_score,
+                }
+
+                assignments_data.append(assignment_info)
+                print(f"📌 Extracted: {assignment_info}")
+
+            except Exception as row_error:
+                print(f"⚠️ Error processing an assignment in {class_name}: {row_error}")
+
+    except Exception as e:
+        print(f"❌ Error scraping assignments for {class_name}: {e}")
+
+    return assignments_data
 
 
 def __iterate_over_each_class(driver, data_output_format):
@@ -55,6 +119,12 @@ def __iterate_over_each_class(driver, data_output_format):
 
                 print(f"Class: {class_name}, Teacher: {teacher_name}, Marking Period: {marking_period}")
 
+                class_meta_data = {
+                    "Class": class_name,
+                    "Teacher": teacher_name,
+                    "MarkingPeriod": marking_period,
+                }
+
                 # Ensure the button is visible in the viewport
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", class_name_element)
                 time.sleep(1)  # Short pause after scrolling
@@ -71,7 +141,7 @@ def __iterate_over_each_class(driver, data_output_format):
                 time.sleep(3)  # Allow class details page to load
 
                 # Call function to scrape assignments
-                __scrape_assignment(class_name, driver, data_output_format)
+                __scrape_assignment(driver, data_output_format, class_meta_data)
 
                 # Return to gradebook page
                 click_grade_book(driver)
