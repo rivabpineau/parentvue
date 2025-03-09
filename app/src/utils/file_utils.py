@@ -1,7 +1,7 @@
 import os
 import json
 import pandas as pd
-from typing import Any, Optional, List, Dict, overload, Literal
+from typing import Any, Optional, List, Dict, Literal
 
 
 def save_data(
@@ -50,3 +50,21 @@ def save_data(
 
     except (IOError, OSError, ValueError) as e:
         print(f"[ERROR] Failed to save data: {e}")
+
+def get_all_files_in_output_dir(the_file_type: Literal["csv", "json"] ) -> tuple[list[str], str | None] | None:
+
+    folder_path = os.getenv("OUTPUT_DIR")
+
+    files = None
+
+    if the_file_type == "csv":
+        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
+    elif the_file_type == "json":
+        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
+
+    if not files:
+        print(f"No {the_file_type} files found in the directory.")
+        return None
+
+
+    return files, folder_path

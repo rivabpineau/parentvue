@@ -10,6 +10,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 __date_scraped = datetime.now().strftime("%Y-%m-%d_%H%M%S")  # Format: YYYY-MM-DD HH:MM:SS
 
+def click_grade_book(driver):
+    __click_grade_book(driver)
 
 def __click_grade_book(driver):
     """

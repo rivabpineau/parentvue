@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 
 from scrappers.pvue_login import login_to_website
 from scrappers.scrape_grades import process_grades
+from scrappers.scrape_assignments import process_assignments
 
 # Load environment variables
 load_dotenv(verbose=True)
+
 
 
 def main():
@@ -22,7 +24,8 @@ def main():
         data_output_format = os.environ.get("DATA_OUTPUT_FORMAT")
 
         s_driver = login_to_website(url,user,pwd)
-        process_grades(s_driver, data_output_format)
+        #process_grades(s_driver, data_output_format)
+        process_assignments(s_driver, data_output_format)
 
     except Exception as e:
         print(e)
