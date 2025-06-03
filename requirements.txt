@@ -3,3 +3,4 @@ webdriver-manager
 python-dotenv
 bs4
 pandas
+pytest
