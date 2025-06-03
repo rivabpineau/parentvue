@@ -1,5 +1,7 @@
+import os
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import List, Dict, Any
 from utils.file_utils import get_all_files_in_output_dir
 
 def json_to_csv_pandas(json_data: List[Dict[str, Any]]) -> str | None:
@@ -13,32 +15,27 @@ def json_to_csv_pandas(json_data: List[Dict[str, Any]]) -> str | None:
         None (prints CSV output)
     """
     if not json_data:
-        print("[ERROR] No data provided to convert.")
         return None
 
     # Convert to pandas DataFrame
     df = pd.DataFrame(json_data)
 
     try:
-        # Save to CSV with proper formatting
         csv_output = df.to_csv(index=False, encoding="utf-8", quoting=1)
         return csv_output
-    except Exception as e:
-        print(f"[ERROR] Failed to convert JSON to CSV: {e}")
+    except Exception:
         return None
 
 
-def merge_csv_data_by_scrape_date():
+def merge_csv_data_by_scrape_date(output_dir: str, output_name: str = "merged.csv") -> pd.DataFrame:
+    """Merge all CSV files in ``output_dir`` into a single DataFrame."""
 
-    csv_files, output_file = get_all_files_in_output_dir("csv")
-
-    # Load all CSVs into a list of dataframes
+    csv_files = get_all_files_in_output_dir("csv", output_dir)
     dfs = [pd.read_csv(file) for file in csv_files]
 
-    # Concatenate all dataframes into one
     merged_df = pd.concat(dfs, ignore_index=True)
 
-    # Save the merged CSV file
+    output_file = os.path.join(output_dir, output_name)
     merged_df.to_csv(output_file, index=False)
 
     return merged_df
