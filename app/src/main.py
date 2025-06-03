@@ -1,37 +1,26 @@
-
 import os
 
-from dotenv import load_dotenv
-
+from config import Config, load_config
 from scrappers.pvue_login import login_to_website
 from scrappers.scrape_grades import process_grades
 from scrappers.scrape_assignments import process_assignments
 
-# Load environment variables
-load_dotenv(verbose=True)
 
+def main(config: Config | None = None) -> None:
+    """Entry point for scraping ParentVUE."""
 
+    cfg = config or load_config()
 
-def main():
-
-    url = os.getenv("PVUE_URL")
-    user = os.getenv("PVUE_USERNAME")
-    pwd = os.getenv("PVUE_PASS")
-
-    s_driver = None
-
+    driver = None
     try:
-        data_output_format = os.environ.get("DATA_OUTPUT_FORMAT")
-
-        s_driver = login_to_website(url,user,pwd)
-        #process_grades(s_driver, data_output_format)
-        process_assignments(s_driver, data_output_format)
-
-    except Exception as e:
-        print(e)
+        driver = login_to_website(cfg.pvue_url, cfg.username, cfg.password)
+        # process_grades(driver, cfg.data_output_format, cfg.grades_file_name, cfg.output_dir)
+        process_assignments(driver, cfg.data_output_format, output_dir=cfg.output_dir)
+    except Exception as exc:
+        print(exc)
     finally:
-        if s_driver:
-            s_driver.quit()
+        if driver:
+            driver.quit()
 
 
 if __name__ == "__main__":

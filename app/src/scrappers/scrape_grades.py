@@ -88,15 +88,26 @@ def __scrape_grades(driver):
     return data
 
 
-def __save_grades(grade_json, data_output_format):
-    file_utils.save_data(grade_json, __date_scraped, data_output_format)
+def __save_grades(grade_json, data_output_format, filename: str, output_dir: str):
+    file_utils.save_data(
+        grade_json,
+        __date_scraped,
+        data_output_format,
+        filename=filename,
+        directory=output_dir,
+    )
 
 
 def __convert_to_csv(grade_json):
     return csv_utils.json_to_csv_pandas(grade_json)
 
 
-def process_grades(driver, data_output_format):
+def process_grades(
+    driver,
+    data_output_format: str,
+    filename: str = "grades",
+    output_dir: str = ".",
+) -> list[dict[str, str]]:
 
     try:
 
@@ -104,7 +115,11 @@ def process_grades(driver, data_output_format):
 
         grade_json = __scrape_grades(driver)
 
-        __save_grades(grade_json, data_output_format)
+        __save_grades(grade_json, data_output_format, filename, output_dir)
+
+        return grade_json
 
     except Exception as e:
-        print(f"[ERROR] Failed to save JSON: {e}")
+        print(f"[ERROR] Failed to save grades: {e}")
+        return []
+

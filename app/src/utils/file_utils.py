@@ -1,70 +1,48 @@
 import os
 import json
+from typing import Any, List, Dict, Literal
+
 import pandas as pd
-from typing import Any, Optional, List, Dict, Literal
 
 
 def save_data(
-        data: List[Dict[str, Any]],
-        the_run_date: str,
-        output_data_format: Literal["json", "csv", "both"] = "json",
-        filename: Optional[str] = None,
-        directory: Optional[str] = None
-) -> None:
+    data: List[Dict[str, Any]],
+    the_run_date: str,
+    output_data_format: Literal["json", "csv", "both"] = "json",
+    filename: str = "grades",
+    directory: str = ".",
+) -> dict[str, str]:
+    """Save structured data to disk.
+
+    The function writes ``data`` to ``directory`` using ``filename`` and the
+    provided ``the_run_date``. It returns a dictionary containing the paths to
+    any files that were written so tests can easily assert on their existence.
     """
-    Saves data to disk in JSON, CSV, or both formats.
 
-    Args:
-        data (List[Dict[str, Any]]): The structured data to save.
-        the_run_date (str): Date used for naming files.
-        output_data_format (str): The format to save the data in. Options: 'json', 'csv', 'both'. Default is 'json'.
-        filename (Optional[str]): Base filename (without extension). Defaults to environment variable or 'grades'.
-        directory (Optional[str]): Directory to save files. Defaults to environment variable or current directory.
+    os.makedirs(directory, exist_ok=True)
 
-    Returns:
-        None
-    """
-    try:
-        # Set defaults from environment variables if not provided
-        filename = filename or os.getenv("GRADES_FILE_NAME")
-        directory = directory or os.getenv("OUTPUT_DIR")
+    json_filepath = os.path.join(directory, f"{filename}_{the_run_date}.json")
+    csv_filepath = os.path.join(directory, f"{filename}_{the_run_date}.csv")
 
-        # Ensure the directory exists
-        os.makedirs(directory, exist_ok=True)
+    paths: dict[str, str] = {}
 
-        # Generate filenames
-        json_filepath = os.path.join(directory, f"{filename}_{the_run_date}.json")
-        csv_filepath = os.path.join(directory, f"{filename}_{the_run_date}.csv")
+    if output_data_format in ["json", "both"]:
+        with open(json_filepath, "w", encoding="utf-8") as json_file:
+            json.dump(data, json_file, indent=4, ensure_ascii=False)
+        paths["json"] = json_filepath
 
-        # Save as JSON
-        if output_data_format in ["json", "both"]:
-            with open(json_filepath, mode="w", encoding="utf-8") as json_file:
-                json.dump(data, json_file, indent=4, ensure_ascii=False)
-            print(f"[INFO] Successfully saved JSON to: {json_filepath}")
+    if output_data_format in ["csv", "both"]:
+        df = pd.DataFrame(data)
+        df.to_csv(csv_filepath, index=False, encoding="utf-8", quoting=1)
+        paths["csv"] = csv_filepath
 
-        # Save as CSV
-        if output_data_format in ["csv", "both"]:
-            df = pd.DataFrame(data)
-            df.to_csv(csv_filepath, index=False, encoding="utf-8", quoting=1)
-            print(f"[INFO] Successfully saved CSV to: {csv_filepath}")
+    return paths
 
-    except (IOError, OSError, ValueError) as e:
-        print(f"[ERROR] Failed to save data: {e}")
+def get_all_files_in_output_dir(
+    the_file_type: Literal["csv", "json"], folder_path: str
+) -> list[str]:
+    """Return a list of file paths for the requested type within ``folder_path``."""
 
-def get_all_files_in_output_dir(the_file_type: Literal["csv", "json"] ) -> tuple[list[str], str | None] | None:
-
-    folder_path = os.getenv("OUTPUT_DIR")
-
-    files = None
-
-    if the_file_type == "csv":
-        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
-    elif the_file_type == "json":
-        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
-
-    if not files:
-        print(f"No {the_file_type} files found in the directory.")
-        return None
-
-
-    return files, folder_path
+    extension = f".{the_file_type}"
+    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(extension)]
+    return files

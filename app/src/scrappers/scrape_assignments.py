@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -6,11 +7,22 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrappers.scrape_grades import click_grade_book
+from utils import file_utils
 
 
-def process_assignments(driver, data_output_format):
+def process_assignments(
+    driver,
+    data_output_format: str,
+    filename: str = "assignments",
+    output_dir: str = ".",
+) -> list[dict[str, str]]:
+    """Scrape assignments for every class and persist the results."""
+
     click_grade_book(driver)
-    __iterate_over_each_class(driver, data_output_format)
+    assignments = __iterate_over_each_class(driver, data_output_format)
+    if assignments:
+        file_utils.save_data(assignments, datetime.now().strftime("%Y-%m-%d_%H%M%S"), data_output_format, filename, output_dir)
+    return assignments
 
 #TODO scraping assignments now. but still needs some refinement. its pulling all of the hidden rows and total row, and not considering the header row as a header row.
 def __scrape_assignment(driver, data_output_format, class_meta_data):
@@ -87,6 +99,8 @@ def __iterate_over_each_class(driver, data_output_format):
     """
     time.sleep(3)  # Allow initial page load
 
+    all_assignments: list[dict[str, str]] = []
+
     while True:
         # Find all class rows (Re-fetch on every iteration to avoid stale elements)
         class_rows = driver.find_elements(By.CSS_SELECTOR, "div.gb-class-header.gb-class-row")
@@ -141,7 +155,8 @@ def __iterate_over_each_class(driver, data_output_format):
                 time.sleep(3)  # Allow class details page to load
 
                 # Call function to scrape assignments
-                __scrape_assignment(driver, data_output_format, class_meta_data)
+                assignments = __scrape_assignment(driver, data_output_format, class_meta_data)
+                all_assignments.extend(assignments)
 
                 # Return to gradebook page
                 click_grade_book(driver)
@@ -153,4 +168,7 @@ def __iterate_over_each_class(driver, data_output_format):
             except Exception as e:
                 print(f"Error processing class {class_name}: {e}")
         break  # Exit the loop after processing all classes
+
+    return all_assignments
+
 
