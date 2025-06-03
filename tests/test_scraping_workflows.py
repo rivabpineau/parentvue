@@ -50,7 +50,7 @@ def test_process_grades_calls_dependencies():
         scrape_grades.process_grades(driver, 'json')
         mock_click.assert_called_once_with(driver)
         mock_scrape.assert_called_once_with(driver)
-        mock_save.assert_called_once_with(grade_data, 'json')
+        mock_save.assert_called_once_with(grade_data, 'json', 'grades', '.')
 
 
 def test_scrape_grades_parses_rows():
